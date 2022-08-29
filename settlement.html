@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8" />
+	
+	<link href="/css/reset.css" th:href="@{/css/reset.css}" rel="stylesheet" />
+	<link href="/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" />
+	
+	<script src="http://code.jquery.com/jquery-3.4.1.min.js"></script>
+	
+	<title>Sunflower Web</title>
+</head>
+	
+<body>
+
+	<header th:insert="fragments/page_header::pageHeader"></header>
+	<main>
+		<div class="container cart">				
+			<p class="info" th:if="${mstDestinationList == null || mstDestinationList.size() == 0}">宛先情報がありません。新規登録してください。</p>
+			<h2 th:if="${mstDestinationList != null && mstDestinationList.size() > 0}">宛先を選択し、決済を完了します。</h2>
+			<!--<p class="info" th:if="${mstDestinationList != null && mstDestinationList.size() > 0}">宛先の新規登録、削除も可能です。</p>-->
+						
+			<div class="completed hidden">
+				<p class="info">決済が完了しました。</p>
+			</div>					 
+	  		
+			<table class="destination" th:if="${mstDestinationList != null && mstDestinationList.size() > 0}" >
+				<tr>
+					<th>選択</th><th>宛先氏名</th><th>住所</th><th>電話番号</th>
+				</tr>
+			
+				<tr th:each="addressInfo,st: ${mstDestinationList}">
+	              <td>
+	                   <input type="radio" name="radio"  class="radio" id="radio" th:value="${addressInfo.id}"  th:checked="${st.index==0}" />
+	                  <td><span th:text="${addressInfo.familyName}"></span><span>　</span><span th:text="${addressInfo.firstName}"></span></td>
+	                  <td th:text="${addressInfo.address}" />
+	                  <td th:text="${addressInfo.telNumber}" />
+	              </td>
+	 			</tr>
+			</table>
+	  	
+		<div class="buttonArea">
+		
+			<!--クリックするとチェックされている宛先を削除する-->
+			<button id="deleteButton" class="hidden" th:if="${mstDestinationList != null && mstDestinationList.size() > 0}">削除</button>
+
+			<form name="destinationForm" action="/sampleweb/destination/">
+				<button type="submit" class="hidden">新規宛先</button>
+			</form>
+			
+		
+			<button type="submit" id="settlmentBtn" th:if="${mstDestinationList != null && mstDestinationList.size() > 0}">決済</button>
+		
+		</div>		
+		</div>
+
+	</main>
+	
+	<script>
+		$(() => {
+			$('#deleteButton').on('click', () => {
+				let checked = $('.radio:checked');
+				let destinationId = $(checked).val();
+				deleteDestination(destinationId, checked);
+			});
+			
+			$('#settlmentBtn').on('click', () => {
+				let checked = $('.radio:checked');
+				let destinationId = $(checked).val();
+				settlement(destinationId);
+			});
+		});
+		
+	
+		function deleteDestination(destinationId, checked) {
+			$.ajax({
+				type: 'POST',
+				url: '/sunflower/destination/delete',
+				data: JSON.stringify({'destinationId': destinationId}),
+				contentType: 'application/json',
+			})
+			.then((result) => {
+				$(checked).parent().parent().remove();
+				let radioList = $('.radio');
+				if (radioList.length == 0) {
+					location.replace('/sunflower/settlement/');
+				}
+				radioList[0].checked = true;
+			}, () => {
+				alert('Error: ajax connection failed.');
+			});
+		}
+	</script>
+
+</body>
+</html>
